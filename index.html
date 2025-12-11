@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Keypress Playground</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .container {
+      background: #020617;
+      border-radius: 16px;
+      padding: 24px 28px 20px;
+      width: min(640px, 100% - 32px);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.5);
+      border: 1px solid #1f2937;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      color: #9ca3af;
+      font-size: 0.95rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    .key-display {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      flex: 1 1 160px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #020617;
+      border: 1px solid #111827;
+    }
+
+    .pill-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .pill-value {
+      font-size: 1.05rem;
+      word-break: break-all;
+      color: #e5e7eb;
+    }
+
+    .pill-value.empty {
+      color: #4b5563;
+      font-style: italic;
+    }
+
+    code {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+      background: #020617;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid #111827;
+    }
+
+    .log {
+      margin-top: 0.75rem;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #111827;
+      background: #020617;
+      max-height: 160px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+    }
+
+    .log-entry span.time {
+      color: #6b7280;
+      font-size: 0.75rem;
+      margin-right: 4px;
+    }
+
+    .log-entry span.type {
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #111827;
+      color: #e5e7eb;
+      margin-right: 4px;
+    }
+
+    .log-entry span.key {
+      color: #a5b4fc;
+    }
+
+    .controls {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #4b5563;
+      background: #111827;
+      color: #e5e7eb;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    button:hover {
+      background: #1f2937;
+    }
+
+    .note {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" tabindex="0" id="root">
+    <h1>Keypress Playground</h1>
+    <p>Focus this box and start pressing keys to see what the browser sends in keyboard events.</p>
+    <div class="hint">
+      Tip: Click anywhere inside this card or press <code>Tab</code> until the outline appears, then try combinations like
+      <code>Ctrl</code> + <code>S</code>, <code>Alt</code> + <code>Shift</code> + <code>K</code>, arrows, etc.
+    </div>
+
+    <div class="key-display">
+      <div class="pill">
+        <div class="pill-label">event.key</div>
+        <div id="display-key" class="pill-value empty">Press any key…</div>
+      </div>
+      <div class="pill">
+        <div class="pill-label">event.code</div>
+        <div id="display-code" class="pill-value empty">—</div>
+      </div>
+      <div class="pill">
+        <div class="pill-label">Modifiers</div>
+        <div id="display-mods" class="pill-value empty">—</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="toggle-logging">Disable logging</button>
+      <button id="clear-log">Clear log</button>
+      <span class="note">Currently listening to <code>keydown</code> and <code>keyup</code>.</span>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.getElementById("root");
+      const displayKey = document.getElementById("display-key");
+      const displayCode = document.getElementById("display-code");
+      const displayMods = document.getElementById("display-mods");
+      const logEl = document.getElementById("log");
+      const toggleLoggingBtn = document.getElementById("toggle-logging");
+      const clearLogBtn = document.getElementById("clear-log");
+
+      let loggingEnabled = true;
+
+      function formatModifiers(e) {
+        const mods = [];
+        if (e.ctrlKey) mods.push("Ctrl");
+        if (e.shiftKey) mods.push("Shift");
+        if (e.altKey) mods.push("Alt");
+        if (e.metaKey) mods.push("Meta");
+        return mods.length ? mods.join(" + ") : "None";
+      }
+
+      function setEmptyState(el, text) {
+        el.textContent = text;
+        el.classList.add("empty");
+      }
+
+      function setValue(el, text) {
+        el.textContent = text;
+        el.classList.remove("empty");
+      }
+
+      function updateDisplay(e) {
+        setValue(displayKey, JSON.stringify(e.key));
+        setValue(displayCode, e.code || "—");
+        setValue(displayMods, formatModifiers(e));
+      }
+
+      function logEvent(type, e) {
+        if (!loggingEnabled) return;
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        const t = new Date().toLocaleTimeString();
+        entry.innerHTML = `
+          <span class="time">${t}</span>
+          <span class="type">${type}</span>
+          <span class="key">${JSON.stringify(e.key)}</span>
+          <span>code=${e.code}</span>
+          <span>keyCode=${e.keyCode}</span>
+          <span>mods=[${formatModifiers(e)}]</span>
+        `;
+        logEl.prepend(entry);
+      }
+
+      // Example: this is where you attach your own key handlers
+      function handleKeyDown(e) {
+        updateDisplay(e);
+        logEvent("keydown", e);
+
+        // ===== Your custom shortcuts can go here =====
+        // Example: prevent Save dialog on Ctrl+S (for testing)
+        if (e.key.toLowerCase() === "s" && e.ctrlKey) {
+          e.preventDefault();
+          console.log("Custom Ctrl+S handler");
+        }
+
+        // Example: press "L" to toggle logging
+        if (e.key.toLowerCase() === "l") {
+          toggleLogging();
+        }
+        // =============================================
+      }
+
+      function handleKeyUp(e) {
+        updateDisplay(e);
+        logEvent("keyup", e);
+      }
+
+      function toggleLogging() {
+        loggingEnabled = !loggingEnabled;
+        toggleLoggingBtn.textContent = loggingEnabled ? "Disable logging" : "Enable logging";
+      }
+
+      root.addEventListener("keydown", handleKeyDown);
+      root.addEventListener("keyup", handleKeyUp);
+
+      toggleLoggingBtn.addEventListener("click", () => {
+        toggleLogging();
+        root.focus();
+      });
+
+      clearLogBtn.addEventListener("click", () => {
+        logEl.innerHTML = "";
+        root.focus();
+      });
+
+      // Ensure the container is focusable at start
+      root.focus();
+    })();
+  </script>
+</body>
+</html>
