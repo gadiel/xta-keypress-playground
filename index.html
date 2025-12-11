@@ -1,603 +1,818 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Keypress Playground</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotkey Compatibility Tracker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f9fafb;
+            --surface: #ffffff;
+            --text: #111827;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --warning: #f97316;
+            --warning-bg: #ffedd5;
+            --warning-text: #9a3412;
+        }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0f172a;
-      color: #e5e7eb;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
 
-    .container {
-      background: #020617;
-      border-radius: 16px;
-      padding: 24px 28px 20px;
-      width: min(640px, 100% - 32px);
-      box-shadow: 0 18px 45px rgba(0,0,0,0.5);
-      border: 1px solid #1f2937;
-    }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-    h1 {
-      margin-top: 0;
-      font-size: 1.6rem;
-      margin-bottom: 0.25rem;
-    }
+        /* Header & Toolbar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
 
-    p {
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      color: #9ca3af;
-      font-size: 0.95rem;
-    }
+        h1 { margin: 0; font-size: 1.8rem; letter-spacing: -0.025em; }
+        .subtitle { color: var(--text-secondary); margin-top: 5px; }
 
-    .hint {
-      font-size: 0.8rem;
-      color: #6b7280;
-      margin-bottom: 1rem;
-    }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            gap: 8px;
+        }
 
-    .key-display {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
-    }
+        .btn-primary { background: var(--primary); color: white; border-color: transparent; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text); }
+        .btn-secondary:hover { background: #f3f4f6; }
 
-    .pill {
-      flex: 1 1 160px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: #020617;
-      border: 1px solid #111827;
-    }
+        .btn-danger-soft { background: var(--danger-bg); color: var(--danger-text); border-color: transparent; }
+        .btn-danger-soft:hover { background: #fecaca; }
 
-    .pill-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
+        .btn-success-soft { background: var(--success-bg); color: var(--success-text); border-color: transparent; }
+        .btn-success-soft:hover { background: #bbf7d0; }
 
-    .pill-value {
-      font-size: 1.05rem;
-      word-break: break-all;
-      color: #e5e7eb;
-    }
+        /* Cards & Forms */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            padding: 20px;
+        }
 
-    .pill-value.empty {
-      color: #4b5563;
-      font-style: italic;
-    }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
 
-    code {
-      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 0.8rem;
-      background: #020617;
-      padding: 2px 6px;
-      border-radius: 6px;
-      border: 1px solid #111827;
-    }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 0.875rem; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
+        input[type="text"], select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
 
-    .log {
-      margin-top: 0.75rem;
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid #111827;
-      background: #020617;
-      max-height: 160px;
-      overflow-y: auto;
-      font-size: 0.8rem;
-    }
+        /* Controls Area */
+        .controls-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .control-group { display: flex; align-items: center; gap: 12px; }
 
-    .log-entry {
-      margin-bottom: 4px;
-    }
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
 
-    .log-entry span.time {
-      color: #6b7280;
-      font-size: 0.75rem;
-      margin-right: 4px;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background: white;
+        }
 
-    .log-entry span.type {
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      padding: 1px 4px;
-      border-radius: 4px;
-      background: #111827;
-      color: #e5e7eb;
-      margin-right: 4px;
-    }
+        th {
+            background-color: #f9fafb;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        
+        /* Sticky first column */
+        th:first-child, td:first-child {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 10;
+            border-right: 2px solid var(--border);
+        }
+        th:first-child { background: #f9fafb; z-index: 20; }
 
-    .log-entry span.key {
-      color: #a5b4fc;
-    }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            vertical-align: middle;
+        }
 
-    .controls {
-      margin-top: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
+        .key-combo {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 600;
+            color: var(--text);
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
 
-    button {
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid #4b5563;
-      background: #111827;
-      color: #e5e7eb;
-      cursor: pointer;
-      font-size: 0.85rem;
-    }
+        /* Status Colors */
+        .status-safe { color: var(--success); font-weight: 600; }
+        .status-conflict { color: var(--danger); font-weight: 700; }
+        .status-mixed { color: var(--warning-text); font-weight: 600; }
+        .status-none { color: #d1d5db; font-style: italic; }
 
-    button:hover {
-      background: #1f2937;
-    }
+        /* Interactions */
+        .cell-interactive {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        
+        .bg-mixed { background-color: var(--warning-bg) !important; }
+        .bg-mixed:hover { background-color: #fed7aa !important; }
 
-    .note {
-      font-size: 0.8rem;
-      color: #6b7280;
-    }
-  </style>
+        .conflict-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .mismatch-icon {
+            float: right;
+            color: var(--warning);
+            font-size: 1.1em;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body {
+            padding: 0;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .conflict-list {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .conflict-list th {
+            position: sticky;
+            top: 0;
+            background: #f9fafb;
+            z-index: 1;
+        }
+        .conflict-list td {
+            border-right: none;
+        }
+        .row-current-user {
+            background-color: #eff6ff;
+        }
+
+        /* Utility */
+        .flex-between { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .subtext { font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; display: block; margin-top: 2px;}
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.2",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.2/",
+    "react/": "https://esm.sh/react@^19.2.2/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.560.0"
+  }
+}
+</script>
 </head>
 <body>
-  <div class="container" tabindex="0" id="root">
-    <h1>Keypress Playground</h1>
-    <p>Focus this box and start pressing keys to see what the browser sends in keyboard events.</p>
-    <div class="hint">
-      Tip: Click anywhere inside this card or press <code>Tab</code> until the outline appears, then try combinations like
-      <code>Ctrl</code> + <code>S</code>, <code>Alt</code> + <code>Shift</code> + <code>K</code>, arrows, etc.
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Hotkey Compatibility Tracker</h1>
+            <div class="subtitle">Determine safe hotkeys across OS, Browser, and Screen Readers.</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <label class="btn btn-secondary">
+                Import JSON
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </label>
+            <button class="btn btn-primary" id="exportBtn">Export Data</button>
+        </div>
+    </header>
+
+    <!-- Metadata Form -->
+    <div class="card">
+        <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem;">Session Environment</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>User Name</label>
+                <input type="text" id="userName" placeholder="e.g. John Doe">
+            </div>
+            <div class="form-group">
+                <label>Operating System</label>
+                <select id="os">
+                    <option value="Mac">Mac</option>
+                    <option value="Win 10">Win 10</option>
+                    <option value="Win 11">Win 11</option>
+                    <option value="Linux">Linux</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Browser</label>
+                <select id="browser">
+                    <option value="Chrome">Chrome</option>
+                    <option value="Safari">Safari</option>
+                    <option value="FireFox">FireFox</option>
+                    <option value="Edge">Edge</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Screen Reader</label>
+                <select id="screenReader">
+                    <option value="None">None</option>
+                    <option value="VoiceOver">VoiceOver (Mac)</option>
+                    <option value="Jaws">Jaws (Windows)</option>
+                    <option value="NVDA">NVDA (Windows)</option>
+                </select>
+            </div>
+        </div>
     </div>
 
-    <div class="key-display">
-      <div class="pill">
-        <div class="pill-label">event.key</div>
-        <div id="display-key" class="pill-value empty">Press any key…</div>
-      </div>
-      <div class="pill">
-        <div class="pill-label">event.code</div>
-        <div id="display-code" class="pill-value empty">—</div>
-      </div>
-      <div class="pill">
-        <div class="pill-label">Modifiers</div>
-        <div id="display-mods" class="pill-value empty">—</div>
-      </div>
+    <!-- Controls -->
+    <div class="card" style="padding: 15px;">
+        <div class="controls-area">
+            <div class="control-group">
+                <button id="recordBtn" class="btn btn-danger-soft">
+                    <span>■</span> Stop Recording
+                </button>
+                <span id="recordStatus" style="font-size: 0.9rem; color: var(--text-secondary);">Listening for keys...</span>
+            </div>
+
+            <div class="control-group">
+                <input type="text" id="manualInput" placeholder="e.g. Ctrl+Alt+S" style="width: 180px;">
+                <button id="addManualBtn" class="btn btn-secondary" style="padding: 8px 12px;">+ Add</button>
+            </div>
+        </div>
     </div>
 
-    <div class="controls">
-      <button id="toggle-logging">Copy log</button>
-      <button id="clear-log">Clear log</button>
-      <span class="note">Currently listening to <code>keydown</code>.</span>
+    <!-- Table -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr id="tableHeaderRow">
+                    <!-- JS will populate -->
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- JS will populate -->
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <div class="log" id="log"></div>
-  </div>
+<!-- Conflict Modal -->
+<div class="modal-overlay" id="conflictModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h3 style="margin:0">Conflict Details</h3>
+                <div id="modalSubtitle" style="color:var(--text-secondary); font-size:0.9rem; margin-top:4px;"></div>
+            </div>
+            <button class="btn btn-secondary" onclick="closeModal()" style="padding:4px 8px;">✕</button>
+        </div>
+        <div class="modal-body">
+            <table class="conflict-list">
+                <thead>
+                    <tr>
+                        <th style="padding-left:20px;">User</th>
+                        <th>Date</th>
+                        <th style="text-align:right; padding-right:20px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody">
+                    <!-- Rows -->
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+</div>
 
-  <script>
-    (function () {
-      const root = document.getElementById("root");
-      const displayKey = document.getElementById("display-key");
-      const displayCode = document.getElementById("display-code");
-      const displayMods = document.getElementById("display-mods");
-      const logEl = document.getElementById("log");
-      const toggleLoggingBtn = document.getElementById("toggle-logging");
-      const clearLogBtn = document.getElementById("clear-log");
-      let textToCopy = "";
+<script>
+    /**
+     * STATE
+     */
+    const state = {
+        metadata: {
+            name: '',
+            os: 'Mac',
+            browser: 'Chrome',
+            screenReader: 'None'
+        },
+        isRecording: true,
+        // Map: "Ctrl+C" -> { pressed: boolean, conflict: boolean }
+        recordedKeys: {},
+        // Array of SessionData objects
+        importedSessions: []
+    };
 
-      let loggingEnabled = true;
-      function getEnvironment() {
-        const ua = navigator.userAgent;
+    /**
+     * UTILITIES
+     */
+    function generateId() {
+        return Math.random().toString(36).substring(2, 15);
+    }
 
+    function getEnvSignature(s) {
+        return `${s.os} / ${s.browser} / ${s.screenReader}`;
+    }
 
-        const isMac = navigator.platform.includes("Mac");
-        const isWindows = navigator.platform.includes("Win");
-        const isLinux = navigator.platform.includes("Linux");
+    function formatKey(e) {
+        const parts = [];
+        if (e.ctrlKey) parts.push('Ctrl');
+        if (e.altKey) parts.push('Alt');
+        if (e.shiftKey) parts.push('Shift');
+        if (e.metaKey) parts.push('Meta');
 
+        if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return parts.join('+');
 
-        const isChrome = /Chrome\/\d+/.test(ua) && !/Edg\//.test(ua);
-        const isSafari = /^((?!Chrome|Chromium|Edg).)*Safari/.test(ua);
-        const isFirefox = /Firefox\/\d+/.test(ua);
-        const isEdge = /Edg\//.test(ua);
+        let key = e.key;
+        if (key === ' ') key = 'Space';
+        else if (key.length === 1) key = key.toUpperCase();
+        
+        parts.push(key);
+        return parts.join('+');
+    }
 
+    /**
+     * CORE LOGIC
+     */
 
-        return {
-            isMac,
-            isWindows,
-            isLinux,
-            isChrome,
-            isSafari,
-            isFirefox,
-            isEdge
+    function renderTable() {
+        // 1. Gather Unique Keys
+        const allKeys = new Set(Object.keys(state.recordedKeys));
+        state.importedSessions.forEach(s => {
+            s.hotkeys.forEach(h => allKeys.add(h.combo));
+        });
+        const sortedKeys = Array.from(allKeys).sort();
+
+        // 2. Group Imported Sessions
+        const groups = {};
+        state.importedSessions.forEach(s => {
+            const sig = getEnvSignature(s);
+            if (!groups[sig]) groups[sig] = [];
+            groups[sig].push(s);
+        });
+        const groupSignatures = Object.keys(groups).sort();
+        const currentEnv = getEnvSignature(state.metadata);
+
+        // 3. Build Header
+        const thead = document.getElementById('tableHeaderRow');
+        thead.innerHTML = '';
+        
+        // Col 1: Key
+        const thKey = document.createElement('th');
+        thKey.textContent = 'Key Combination';
+        thead.appendChild(thKey);
+
+        // Col 2: Current Session
+        const thCurrent = document.createElement('th');
+        thCurrent.innerHTML = `Current Session<span class="subtext">${currentEnv}</span>`;
+        thead.appendChild(thCurrent);
+
+        // Col 3+: Groups
+        groupSignatures.forEach(sig => {
+            const th = document.createElement('th');
+            const count = groups[sig].length;
+            th.innerHTML = `${sig}<span class="subtext">${count} User${count > 1 ? 's' : ''}</span>`;
+            thead.appendChild(th);
+        });
+
+        // 4. Build Body
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if (sortedKeys.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center; padding:40px; color:#9ca3af;">No keys recorded. Press keys or import data.</td></tr>';
+            return;
+        }
+
+        sortedKeys.forEach(combo => {
+            const row = document.createElement('tr');
+            
+            // Col 1: Key
+            const tdKey = document.createElement('td');
+            tdKey.innerHTML = `<span class="key-combo">${combo}</span>`;
+            row.appendChild(tdKey);
+
+            // Col 2: Current Session
+            const currentRec = state.recordedKeys[combo];
+            const tdCurrent = document.createElement('td');
+            
+            // Determine Current Status visual
+            let currentStatusHtml = '';
+            if (!currentRec) {
+                currentStatusHtml = '<span class="status-none">Not Pressed</span>';
+            } else if (!currentRec.pressed) {
+                 if (currentRec.conflict) currentStatusHtml = '<span class="status-conflict">Conflict (NP)</span>';
+                 else currentStatusHtml = '<span class="status-none">Not Pressed</span>';
+            } else {
+                 if (currentRec.conflict) currentStatusHtml = '<span class="status-conflict">Conflict</span>';
+                 else currentStatusHtml = '<span class="status-safe">Safe</span>';
+            }
+
+            // Check Mismatch against matching group
+            let isCurrentMismatch = false;
+            let matchingGroupSig = null;
+
+            // Logic: Compare current user's conflict status with the group's consolidated status
+            if (groups[currentEnv]) {
+                const groupStats = getGroupStats(groups[currentEnv], combo);
+                const myConflict = currentRec ? currentRec.conflict : false; // Default safe if not pressed/recorded
+                
+                // If group is Mixed, we are mismatched (ambiguous environment)
+                // If group is Conflict but I say Safe -> Mismatch
+                // If group is Safe but I say Conflict -> Mismatch
+                
+                if (groupStats.status === 'mixed') isCurrentMismatch = true;
+                else if (groupStats.status === 'conflict' && !myConflict) isCurrentMismatch = true;
+                else if (groupStats.status === 'safe' && myConflict) isCurrentMismatch = true;
+                
+                if (isCurrentMismatch) matchingGroupSig = currentEnv;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex-between';
+            wrapper.innerHTML = `<div>${currentStatusHtml}</div>`;
+
+            // Conflict Checkbox
+            const label = document.createElement('label');
+            label.className = 'conflict-toggle';
+            label.onclick = (e) => e.stopPropagation(); // prevent row click
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = currentRec ? currentRec.conflict : false;
+            checkbox.onchange = () => toggleConflict(combo);
+            
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode('Flag Conflict'));
+            wrapper.appendChild(label);
+            
+            tdCurrent.appendChild(wrapper);
+
+            if (isCurrentMismatch) {
+                tdCurrent.classList.add('bg-mixed', 'cell-interactive');
+                tdCurrent.title = "Mismatch with other users in this environment";
+                const icon = document.createElement('span');
+                icon.className = 'mismatch-icon';
+                icon.textContent = '⚠️';
+                wrapper.appendChild(icon);
+                
+                tdCurrent.onclick = (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        openMismatchModal(combo, currentEnv, groups[currentEnv], true);
+                    }
+                };
+            }
+            row.appendChild(tdCurrent);
+
+            // Col 3+: Groups
+            groupSignatures.forEach(sig => {
+                const td = document.createElement('td');
+                const stats = getGroupStats(groups[sig], combo);
+
+                if (stats.status === 'none') {
+                    td.innerHTML = '<span class="status-none">-</span>';
+                } else {
+                    let text = '';
+                    let cls = '';
+                    if (stats.status === 'mixed') { text = 'Mixed'; cls = 'status-mixed'; }
+                    else if (stats.status === 'conflict') { text = 'Conflict'; cls = 'status-conflict'; }
+                    else { text = 'Safe'; cls = 'status-safe'; }
+                    
+                    td.innerHTML = `<span class="${cls}">${text}</span>`;
+                    
+                    if (stats.status === 'mixed') {
+                        td.classList.add('bg-mixed', 'cell-interactive');
+                        td.onclick = () => openMismatchModal(combo, sig, groups[sig], false);
+                    }
+                }
+                row.appendChild(td);
+            });
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function getGroupStats(sessionList, combo) {
+        let hasConflict = false;
+        let hasSafe = false;
+        let count = 0;
+
+        sessionList.forEach(s => {
+            const rec = s.hotkeys.find(h => h.combo === combo);
+            if (rec) {
+                count++;
+                if (rec.conflict) hasConflict = true;
+                else hasSafe = true;
+            }
+        });
+
+        if (count === 0) return { status: 'none' };
+        if (hasConflict && hasSafe) return { status: 'mixed' };
+        if (hasConflict) return { status: 'conflict' };
+        return { status: 'safe' };
+    }
+
+    // --- Actions ---
+
+    function toggleConflict(combo) {
+        if (!state.recordedKeys[combo]) {
+            // Create if doesn't exist (Not pressed yet)
+            state.recordedKeys[combo] = { pressed: false, conflict: true };
+        } else {
+            state.recordedKeys[combo].conflict = !state.recordedKeys[combo].conflict;
+        }
+        renderTable();
+    }
+
+    function addManualKey() {
+        const input = document.getElementById('manualInput');
+        const val = input.value.trim();
+        if (!val) return;
+
+        // Title Case formatting
+        const formatted = val.split('+').map(p => {
+            const t = p.trim();
+            return t.charAt(0).toUpperCase() + t.slice(1);
+        }).join('+');
+
+        if (!state.recordedKeys[formatted]) {
+            state.recordedKeys[formatted] = { pressed: false, conflict: false };
+            renderTable();
+        }
+        input.value = '';
+    }
+
+    function openMismatchModal(combo, envSig, groupSessions, includeCurrent) {
+        const modal = document.getElementById('conflictModal');
+        const modalTable = document.getElementById('modalTableBody');
+        const subtitle = document.getElementById('modalSubtitle');
+        
+        subtitle.innerHTML = `Key: <strong>${combo}</strong> &nbsp;|&nbsp; Environment: <strong>${envSig}</strong>`;
+        modalTable.innerHTML = '';
+
+        const records = [];
+
+        // Add Group Sessions
+        if (groupSessions) {
+            groupSessions.forEach(s => {
+                const rec = s.hotkeys.find(h => h.combo === combo);
+                if (rec) {
+                    records.push({
+                        name: s.name || 'Unknown',
+                        date: s.date,
+                        conflict: rec.conflict,
+                        isCurrent: false
+                    });
+                }
+            });
+        }
+
+        // Add Current Session if part of mismatch
+        if (includeCurrent && state.recordedKeys[combo]) {
+             records.unshift({
+                name: state.metadata.name || 'You',
+                date: new Date().toISOString(),
+                conflict: state.recordedKeys[combo].conflict,
+                isCurrent: true
+             });
+        }
+
+        records.forEach(r => {
+            const tr = document.createElement('tr');
+            if (r.isCurrent) tr.className = 'row-current-user';
+            
+            const dateStr = new Date(r.date).toLocaleString();
+            
+            const statusBadge = r.conflict 
+                ? '<span style="background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; font-size:0.8em; font-weight:bold;">Conflict</span>'
+                : '<span style="background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-size:0.8em; font-weight:bold;">Safe</span>';
+
+            tr.innerHTML = `
+                <td style="padding-left:20px;">
+                    <strong>${r.name}</strong>
+                    ${r.isCurrent ? '<span style="color:var(--primary); font-size:0.8em;"> (Current)</span>' : ''}
+                </td>
+                <td style="color:#6b7280; font-size:0.85em;">${dateStr}</td>
+                <td style="text-align:right; padding-right:20px;">${statusBadge}</td>
+            `;
+            modalTable.appendChild(tr);
+        });
+
+        modal.style.display = 'flex';
+    }
+
+    window.closeModal = function() {
+        document.getElementById('conflictModal').style.display = 'none';
+    };
+
+    // --- Event Listeners ---
+
+    // Inputs
+    ['userName', 'os', 'browser', 'screenReader'].forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+            state.metadata[id === 'userName' ? 'name' : id] = e.target.value;
+            renderTable(); // Re-render because column headers might change
+        });
+    });
+
+    // Recording Toggle
+    const recordBtn = document.getElementById('recordBtn');
+    const recordStatus = document.getElementById('recordStatus');
+    
+    recordBtn.addEventListener('click', () => {
+        state.isRecording = !state.isRecording;
+        if (state.isRecording) {
+            recordBtn.innerHTML = '<span>■</span> Stop Recording';
+            recordBtn.className = 'btn btn-danger-soft';
+            recordStatus.textContent = 'Listening for keys...';
+        } else {
+            recordBtn.innerHTML = '<span>▶</span> Start Recording';
+            recordBtn.className = 'btn btn-success-soft';
+            recordStatus.textContent = 'Recording paused.';
+        }
+    });
+
+    // Manual Add
+    document.getElementById('addManualBtn').addEventListener('click', addManualKey);
+    document.getElementById('manualInput').addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') addManualKey();
+    });
+
+    // Keydown Listener
+    window.addEventListener('keydown', (e) => {
+        if (!state.isRecording) return;
+        if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+        // Don't record if typing in inputs
+        if (e.target.tagName === 'INPUT') return;
+
+        const combo = formatKey(e);
+        e.preventDefault(); // Prevent browser default actions for cleaner testing
+
+        if (!state.recordedKeys[combo]) {
+            state.recordedKeys[combo] = { pressed: true, conflict: false };
+            renderTable();
+        } else if (!state.recordedKeys[combo].pressed) {
+            // Was manually added, now physically pressed
+            state.recordedKeys[combo].pressed = true;
+            renderTable();
+        }
+    });
+
+    // Export
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        const currentSession = {
+            ...state.metadata,
+            id: generateId(),
+            date: new Date().toISOString(),
+            hotkeys: Object.entries(state.recordedKeys).map(([k, v]) => ({ combo: k, ...v }))
         };
-    }
+        const allData = [currentSession, ...state.importedSessions];
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
+        const link = document.createElement('a');
+        link.href = dataStr;
+        link.download = `hotkeys_${state.metadata.name.replace(/\s+/g, '_') || 'user'}_${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    });
 
-      const env = getEnvironment();
+    // Import
+    document.getElementById('importFile').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    if(env.isMac)
-        console.log("isMac")
-    if(env.isWindows)
-        console.log("isWindows")
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const json = JSON.parse(evt.target.result);
+                if (Array.isArray(json)) {
+                    // Deduplicate by ID
+                    const newSessions = json.filter(s => 
+                        !state.importedSessions.some(existing => existing.id === s.id)
+                    );
+                    state.importedSessions.push(...newSessions);
+                    renderTable();
+                } else {
+                    alert('Invalid JSON: Expected an array.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error parsing JSON');
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    });
 
+    // Init
+    renderTable();
 
-    if(env.isChrome)
-        console.log("isChrome")
-    if(env.isSafari)
-        console.log("isSafari")
-    if(env.isFirefox)
-        console.log("isFirefox")
-    if(env.isEdge)
-        console.log("isEdge")
-
-      function formatModifiers(e) {
-        const mods = [];
-        if (e.ctrlKey) mods.push("Ctrl");
-        if (e.shiftKey) mods.push("Shift");
-        if (e.altKey) mods.push("Alt");
-        if (e.metaKey) mods.push("Meta");
-        return mods.length ? mods.join(" + ") : "None";
-      }
-
-      function setEmptyState(el, text) {
-        el.textContent = text;
-        el.classList.add("empty");
-      }
-
-      function setValue(el, text) {
-        el.textContent = text;
-        el.classList.remove("empty");
-      }
-
-      function updateDisplay(e) {
-        setValue(displayKey, JSON.stringify(e.key));
-        setValue(displayCode, e.code || "—");
-        setValue(displayMods, formatModifiers(e));
-      }
-
-      function logEvent(combo) {
-        if (!loggingEnabled) return;
-        console.log(combo);
-        textToCopy += combo +"\n";
-
-        const entry = document.createElement("div");
-        entry.className = "log-entry";
-        const t = new Date().toLocaleTimeString();
-        entry.innerHTML = `
-          <span class="time">${t}</span>
-          <span class="type">${combo}</span>
-        `;
-        logEl.prepend(entry);
-      }
-
-      // Example: this is where you attach your own key handlers
-      function handleKeyDown(e) {
-
-    let targetKey = "J";
-    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
-      logEvent(message);
-      return;
-    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
-      
-      return;
-    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
-      
-      return;
-    }
-
-
-    targetKey = "I";
-    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
-      
-      return;
-    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.altKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
-      
-      return;
-    }
-
-
-    targetKey = "D";
-    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
-      
-      return;
-    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
-      
-      return;
-    }
-
-
-    targetKey = "A";
-    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
-      
-      return;
-    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
-      
-      return;
-    }
-
-
-    targetKey = "S";
-    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
-      
-      return;
-    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
-      
-      return;
-    }
-
-
-    targetKey = "U";
-    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
-      
-      return;
-    }
-    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
-      
-      return;
-    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
-      
-      return;
-    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
-      e.preventDefault();
-      updateDisplay(e);
-      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
-      
-      return;
-    }
-      }
-
-      function toggleLogging() {
-        loggingEnabled = !loggingEnabled;
-        toggleLoggingBtn.textContent = loggingEnabled ? "Disable logging" : "Enable logging";
-      }
-
-      root.addEventListener("keydown", handleKeyDown);
-      //root.addEventListener("keyup", handleKeyUp);
-
-      toggleLoggingBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(textToCopy)
-        .then(() => console.log("Copied!"))
-        .catch(err => console.error("Failed to copy: ", err));
-        root.focus();
-      });
-
-      clearLogBtn.addEventListener("click", () => {
-        logEl.innerHTML = "";
-        textToCopy = "";
-        root.focus();
-      });
-
-      // Ensure the container is focusable at start
-      root.focus();
-    })();
-  </script>
+</script>
 </body>
 </html>
