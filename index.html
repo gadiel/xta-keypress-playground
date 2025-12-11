@@ -181,7 +181,7 @@
     <div class="controls">
       <button id="toggle-logging">Disable logging</button>
       <button id="clear-log">Clear log</button>
-      <span class="note">Currently listening to <code>keydown</code> and <code>keyup</code>.</span>
+      <span class="note">Currently listening to <code>keydown</code>.</span>
     </div>
 
     <div class="log" id="log"></div>
@@ -196,8 +196,51 @@
       const logEl = document.getElementById("log");
       const toggleLoggingBtn = document.getElementById("toggle-logging");
       const clearLogBtn = document.getElementById("clear-log");
+      const textToCopy = "";
 
       let loggingEnabled = true;
+      function getEnvironment() {
+        const ua = navigator.userAgent;
+
+
+        const isMac = navigator.platform.includes("Mac");
+        const isWindows = navigator.platform.includes("Win");
+        const isLinux = navigator.platform.includes("Linux");
+
+
+        const isChrome = /Chrome\/\d+/.test(ua) && !/Edg\//.test(ua);
+        const isSafari = /^((?!Chrome|Chromium|Edg).)*Safari/.test(ua);
+        const isFirefox = /Firefox\/\d+/.test(ua);
+        const isEdge = /Edg\//.test(ua);
+
+
+        return {
+            isMac,
+            isWindows,
+            isLinux,
+            isChrome,
+            isSafari,
+            isFirefox,
+            isEdge
+        };
+    }
+
+      const env = getEnvironment();
+
+    if(env.isMac)
+        console.log("isMac")
+    if(env.isWindows)
+        console.log("isWindows")
+
+
+    if(env.isChrome)
+        console.log("isChrome")
+    if(env.isSafari)
+        console.log("isSafari")
+    if(env.isFirefox)
+        console.log("isFirefox")
+    if(env.isEdge)
+        console.log("isEdge")
 
       function formatModifiers(e) {
         const mods = [];
@@ -224,44 +267,311 @@
         setValue(displayMods, formatModifiers(e));
       }
 
-      function logEvent(type, e) {
+      function logEvent(combo) {
         if (!loggingEnabled) return;
+        console.log(combo);
+        textToCopy += combo +"\n";
+
         const entry = document.createElement("div");
         entry.className = "log-entry";
         const t = new Date().toLocaleTimeString();
         entry.innerHTML = `
           <span class="time">${t}</span>
-          <span class="type">${type}</span>
-          <span class="key">${JSON.stringify(e.key)}</span>
-          <span>code=${e.code}</span>
-          <span>keyCode=${e.keyCode}</span>
-          <span>mods=[${formatModifiers(e)}]</span>
+          <span class="type">${combo}</span>
         `;
         logEl.prepend(entry);
       }
 
       // Example: this is where you attach your own key handlers
       function handleKeyDown(e) {
-        updateDisplay(e);
-        logEvent("keydown", e);
 
-        // ===== Your custom shortcuts can go here =====
-        // Example: prevent Save dialog on Ctrl+S (for testing)
-        if (e.key.toLowerCase() === "s" && e.ctrlKey) {
-          e.preventDefault();
-          console.log("Custom Ctrl+S handler");
-        }
+    let targetKey = "J";
+    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
+      logEvent(message);
+      return;
+    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
+      
+      return;
+    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
+      
+      return;
+    }
 
-        // Example: press "L" to toggle logging
-        if (e.key.toLowerCase() === "l") {
-          toggleLogging();
-        }
-        // =============================================
-      }
 
-      function handleKeyUp(e) {
-        updateDisplay(e);
-        logEvent("keyup", e);
+    targetKey = "I";
+    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
+      
+      return;
+    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.altKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
+      
+      return;
+    }
+
+
+    targetKey = "D";
+    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
+      
+      return;
+    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
+      
+      return;
+    }
+
+
+    targetKey = "A";
+    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
+      
+      return;
+    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
+      
+      return;
+    }
+
+
+    targetKey = "S";
+    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
+      
+      return;
+    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
+      
+      return;
+    }
+
+
+    targetKey = "U";
+    if (e.altKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Alt+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.metaKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+Shift+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && !e.shiftKey && e.ctrlKey && !e.metaKey && e.key.toUpperCase() === targetKey) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (CTRL+ALT+"+targetKey+")");
+      
+      return;
+    }
+    else if (e.metaKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Cmd+"+targetKey+")");
+      
+      return;
+    }else if (e.shiftKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (Shift+"+targetKey+")");
+      
+      return;
+    }else if (e.altKey && e.key.toUpperCase() === targetKey ) {
+      e.preventDefault();
+      updateDisplay(e);
+      logEvent("MAC HOTKEY TRIGGERED (ALT+"+targetKey+")");
+      
+      return;
+    }
       }
 
       function toggleLogging() {
@@ -270,7 +580,7 @@
       }
 
       root.addEventListener("keydown", handleKeyDown);
-      root.addEventListener("keyup", handleKeyUp);
+      //root.addEventListener("keyup", handleKeyUp);
 
       toggleLoggingBtn.addEventListener("click", () => {
         toggleLogging();
