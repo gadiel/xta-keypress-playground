@@ -179,7 +179,7 @@
     </div>
 
     <div class="controls">
-      <button id="toggle-logging">Disable logging</button>
+      <button id="toggle-logging">Copy log</button>
       <button id="clear-log">Clear log</button>
       <span class="note">Currently listening to <code>keydown</code>.</span>
     </div>
@@ -583,12 +583,15 @@
       //root.addEventListener("keyup", handleKeyUp);
 
       toggleLoggingBtn.addEventListener("click", () => {
-        toggleLogging();
+        navigator.clipboard.writeText(textToCopy)
+        .then(() => console.log("Copied!"))
+        .catch(err => console.error("Failed to copy: ", err));
         root.focus();
       });
 
       clearLogBtn.addEventListener("click", () => {
         logEl.innerHTML = "";
+        textToCopy = "";
         root.focus();
       });
 
