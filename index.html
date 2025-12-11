@@ -106,6 +106,22 @@
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
 
+        /* Checkbox styling */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-top: 8px;
+        }
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
         /* Controls Area */
         .controls-area {
             display: flex;
@@ -345,6 +361,46 @@
         </div>
     </div>
 
+    <!-- Filters -->
+    <div class="card">
+        <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem;">Table Filters</h3>
+        <div class="form-grid">
+            <div class="form-group" style="justify-content: flex-end;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="filterHideSingle"> Hide Single Keys (e.g. 'A', 'Enter')
+                </label>
+            </div>
+            <div class="form-group" style="justify-content: flex-end;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="filterShowConflictsOnly"> Hide Safe/Unpressed Rows
+                </label>
+            </div>
+            <div class="form-group">
+                <label>Filter User Name</label>
+                <input type="text" id="filterUser" placeholder="Search imported users...">
+            </div>
+            <div class="form-group">
+                <label>Filter Environment</label>
+                <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                    <select id="filterOs" style="flex:1; min-width:80px;">
+                        <option value="">All OS</option>
+                        <option value="Mac">Mac</option>
+                        <option value="Win 10">Win 10</option>
+                        <option value="Win 11">Win 11</option>
+                        <option value="Linux">Linux</option>
+                    </select>
+                    <select id="filterBrowser" style="flex:1; min-width:80px;">
+                        <option value="">All Browsers</option>
+                        <option value="Chrome">Chrome</option>
+                        <option value="Safari">Safari</option>
+                        <option value="FireFox">FireFox</option>
+                        <option value="Edge">Edge</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Table -->
     <div class="table-container">
         <table>
@@ -401,6 +457,13 @@
             browser: 'Chrome',
             screenReader: 'None'
         },
+        filters: {
+            hideSingle: false,
+            conflictsOnly: false,
+            user: '',
+            os: '',
+            browser: ''
+        },
         isRecording: true,
         // Map: "Ctrl+C" -> { pressed: boolean, conflict: boolean }
         recordedKeys: {},
@@ -441,16 +504,24 @@
      */
 
     function renderTable() {
-        // 1. Gather Unique Keys
+        // 0. Filter Imported Sessions (Comparison Columns)
+        const filteredSessions = state.importedSessions.filter(s => {
+            if (state.filters.user && !s.name.toLowerCase().includes(state.filters.user.toLowerCase())) return false;
+            if (state.filters.os && s.os !== state.filters.os) return false;
+            if (state.filters.browser && s.browser !== state.filters.browser) return false;
+            return true;
+        });
+
+        // 1. Gather Unique Keys (considering current + filtered imported)
         const allKeys = new Set(Object.keys(state.recordedKeys));
-        state.importedSessions.forEach(s => {
+        filteredSessions.forEach(s => {
             s.hotkeys.forEach(h => allKeys.add(h.combo));
         });
         const sortedKeys = Array.from(allKeys).sort();
 
-        // 2. Group Imported Sessions
+        // 2. Group Filtered Sessions
         const groups = {};
-        state.importedSessions.forEach(s => {
+        filteredSessions.forEach(s => {
             const sig = getEnvSignature(s);
             if (!groups[sig]) groups[sig] = [];
             groups[sig].push(s);
@@ -485,11 +556,60 @@
         tbody.innerHTML = '';
 
         if (sortedKeys.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center; padding:40px; color:#9ca3af;">No keys recorded. Press keys or import data.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center; padding:40px; color:#9ca3af;">No keys recorded matching criteria.</td></tr>';
             return;
         }
 
+        let visibleRows = 0;
+
         sortedKeys.forEach(combo => {
+            // Filter: Hide Single Keys
+            if (state.filters.hideSingle && !combo.includes('+')) return;
+
+            // Calculate Statuses early for "Conflicts Only" filter
+            const currentRec = state.recordedKeys[combo];
+            
+            // Current Status calc
+            let currentStatus = 'none';
+            if (currentRec) {
+                if (!currentRec.pressed) currentStatus = currentRec.conflict ? 'conflict' : 'none';
+                else currentStatus = currentRec.conflict ? 'conflict' : 'safe';
+            }
+
+            // Group Stats calc
+            const groupStatsMap = {};
+            let hasAnyConflictOrMixed = false;
+
+            groupSignatures.forEach(sig => {
+                const stats = getGroupStats(groups[sig], combo);
+                groupStatsMap[sig] = stats;
+                if (stats.status === 'conflict' || stats.status === 'mixed') hasAnyConflictOrMixed = true;
+            });
+
+            // Check Mismatch for Current User
+            // If current env matches a visible group column, check against it
+            let isCurrentMismatch = false;
+            let matchingGroupSig = null;
+            if (groups[currentEnv]) {
+                const groupStats = groupStatsMap[currentEnv];
+                const myConflict = currentRec ? currentRec.conflict : false;
+                
+                if (groupStats.status === 'mixed') isCurrentMismatch = true;
+                else if (groupStats.status === 'conflict' && !myConflict) isCurrentMismatch = true;
+                else if (groupStats.status === 'safe' && myConflict) isCurrentMismatch = true;
+                
+                if (isCurrentMismatch) matchingGroupSig = currentEnv;
+            }
+
+            if (isCurrentMismatch || currentStatus === 'conflict') hasAnyConflictOrMixed = true;
+
+            // Filter: Hide Safe/Unpressed Rows
+            // "If all displayed columns ... are Safe or Not Pressed"
+            if (state.filters.conflictsOnly && !hasAnyConflictOrMixed) {
+                return;
+            }
+
+            visibleRows++;
             const row = document.createElement('tr');
             
             // Col 1: Key
@@ -497,40 +617,17 @@
             tdKey.innerHTML = `<span class="key-combo">${combo}</span>`;
             row.appendChild(tdKey);
 
-            // Col 2: Current Session
-            const currentRec = state.recordedKeys[combo];
+            // Col 2: Current Session Visuals
             const tdCurrent = document.createElement('td');
             
-            // Determine Current Status visual
             let currentStatusHtml = '';
-            if (!currentRec) {
-                currentStatusHtml = '<span class="status-none">Not Pressed</span>';
-            } else if (!currentRec.pressed) {
-                 if (currentRec.conflict) currentStatusHtml = '<span class="status-conflict">Conflict (NP)</span>';
-                 else currentStatusHtml = '<span class="status-none">Not Pressed</span>';
-            } else {
-                 if (currentRec.conflict) currentStatusHtml = '<span class="status-conflict">Conflict</span>';
-                 else currentStatusHtml = '<span class="status-safe">Safe</span>';
-            }
+            if (currentStatus === 'none') currentStatusHtml = '<span class="status-none">Not Pressed</span>';
+            else if (currentStatus === 'conflict') currentStatusHtml = '<span class="status-conflict">Conflict</span>';
+            else currentStatusHtml = '<span class="status-safe">Safe</span>';
 
-            // Check Mismatch against matching group
-            let isCurrentMismatch = false;
-            let matchingGroupSig = null;
-
-            // Logic: Compare current user's conflict status with the group's consolidated status
-            if (groups[currentEnv]) {
-                const groupStats = getGroupStats(groups[currentEnv], combo);
-                const myConflict = currentRec ? currentRec.conflict : false; // Default safe if not pressed/recorded
-                
-                // If group is Mixed, we are mismatched (ambiguous environment)
-                // If group is Conflict but I say Safe -> Mismatch
-                // If group is Safe but I say Conflict -> Mismatch
-                
-                if (groupStats.status === 'mixed') isCurrentMismatch = true;
-                else if (groupStats.status === 'conflict' && !myConflict) isCurrentMismatch = true;
-                else if (groupStats.status === 'safe' && myConflict) isCurrentMismatch = true;
-                
-                if (isCurrentMismatch) matchingGroupSig = currentEnv;
+            // Override text if it was conflict but NP (Not Pressed)
+            if (currentRec && !currentRec.pressed && currentRec.conflict) {
+                currentStatusHtml = '<span class="status-conflict">Conflict (NP)</span>';
             }
 
             const wrapper = document.createElement('div');
@@ -540,7 +637,7 @@
             // Conflict Checkbox
             const label = document.createElement('label');
             label.className = 'conflict-toggle';
-            label.onclick = (e) => e.stopPropagation(); // prevent row click
+            label.onclick = (e) => e.stopPropagation(); 
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -572,7 +669,7 @@
             // Col 3+: Groups
             groupSignatures.forEach(sig => {
                 const td = document.createElement('td');
-                const stats = getGroupStats(groups[sig], combo);
+                const stats = groupStatsMap[sig];
 
                 if (stats.status === 'none') {
                     td.innerHTML = '<span class="status-none">-</span>';
@@ -595,6 +692,10 @@
 
             tbody.appendChild(row);
         });
+        
+        if (visibleRows === 0 && sortedKeys.length > 0) {
+             tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center; padding:40px; color:#9ca3af;">All recorded keys hidden by active filters.</td></tr>';
+        }
     }
 
     function getGroupStats(sessionList, combo) {
@@ -716,7 +817,24 @@
     ['userName', 'os', 'browser', 'screenReader'].forEach(id => {
         document.getElementById(id).addEventListener('input', (e) => {
             state.metadata[id === 'userName' ? 'name' : id] = e.target.value;
-            renderTable(); // Re-render because column headers might change
+            renderTable(); 
+        });
+    });
+
+    // Filters
+    document.getElementById('filterHideSingle').addEventListener('change', (e) => {
+        state.filters.hideSingle = e.target.checked;
+        renderTable();
+    });
+    document.getElementById('filterShowConflictsOnly').addEventListener('change', (e) => {
+        state.filters.conflictsOnly = e.target.checked;
+        renderTable();
+    });
+    ['filterUser', 'filterOs', 'filterBrowser'].forEach(id => {
+        const key = id.replace('filter', '').toLowerCase(); // user, os, browser
+        document.getElementById(id).addEventListener('input', (e) => {
+            state.filters[key] = e.target.value;
+            renderTable();
         });
     });
 
@@ -747,11 +865,10 @@
     window.addEventListener('keydown', (e) => {
         if (!state.isRecording) return;
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
-        // Don't record if typing in inputs
         if (e.target.tagName === 'INPUT') return;
 
         const combo = formatKey(e);
-        e.preventDefault(); // Prevent browser default actions for cleaner testing
+        e.preventDefault(); 
 
         if (!state.recordedKeys[combo]) {
             state.recordedKeys[combo] = { pressed: true, conflict: false };
